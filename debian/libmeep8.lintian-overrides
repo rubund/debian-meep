@@ -1,0 +1,3 @@
+#due to arch- and optimisation-dependent symbols the symbols-file is not
+#maintainable and FTBSs occur on lots of architectures
+libmeep8: no-symbols-control-file

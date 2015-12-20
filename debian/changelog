@@ -1,0 +1,207 @@
+meep (1.3-4) unstable; urgency=medium
+
+  * debian/control: Update build dependencies for GSL 2, (Closes: #807210)
+                    change libgsl0-dev to libgsl-dev.
+                    Thanks to Bas Couwenberg for the patch
+  * debian/rules: Update configure flag to look for /usr/share/libctl
+                  Thanks to Logan Rosen for the patch (Closes:  #748822)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Sun, 20 Dec 2015 11:00:00 +0100
+
+meep (1.3-3) unstable; urgency=medium
+
+  * debian/rules: exclude architectures from tests (see #759790)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 06 Jul 2015 20:00:00 +0200
+
+meep (1.3-2) unstable; urgency=medium
+
+  * debian/rules: use --parallel in dh (Closes: #759790)
+                  (Thanks to Gilles Filippini for this hint) 
+  * debian/rules: don't use tests on powerpc until issue is clarified
+                  (Closes: #790917)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Sun, 05 Jul 2015 11:00:00 +0200
+
+meep (1.3-1) unstable; urgency=medium
+
+  * new upstream version (Closes: #781624, #789558)
+  * soname changed to 8
+  * debian/control: Standards Version to 3.9.6. (No changes needed).
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 22 Jun 2015 19:00:00 +0200
+
+meep (1.2.1-2) unstable; urgency=medium
+
+  * Support hdf5 1.8.13 new packaging layout. (Closes: #756679)
+    (patch by Gilles Filippini <pini@debian.org>)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Sun, 03 Aug 2014 12:00:00 +0200
+
+meep (1.2.1-1) unstable; urgency=medium
+
+  * new upstream version (Closes: #743466)
+  * soname changed to 7
+  * debian/rules: upstream ChangeLog is now called NEWS
+  * debian/control: Standards Version to 3.9.5. (No changes needed).
+  * debian/control: switch to dh 9
+  * debian/control: use guile 2.0 now (Closes: #746007)
+  * debian/rules: use debhelper (Closes: #747410)
+  * debian/rules: use --with autoreconf (Closes: #744465)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Sat, 10 May 2014 15:20:00 +0200
+
+meep (1.1.1-9) unstable; urgency=low
+
+  * Configure with --with-gcc-arch=no to generate generic code.
+    (Closes: #735368)
+  * debian/control: remove DM-Upload-Allowed
+  * debian/control: libhdf5-serial-dev is libhdf5-dev now
+  * debian/copyright: fix lintian warning about duplicate field
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 20 Jan 2014 18:20:00 +0100
+
+meep (1.1.1-8) unstable; urgency=low
+
+  * debian/control: Standards Version to 3.9.3. (No changes needed).
+  * debian/control: (Closes: #661661, #662956, #559773)
+                    as mpich is no longer maintained and has been
+                    removed, all mpi-packages have been removed as well
+                    so this package is only about the serial version now
+  * debian/source/format: format 3.0 (quilt) introduced
+  * debian/copyright: adjust Format:
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Tue, 03 Apr 2012 17:20:00 +0200
+
+meep (1.1.1-7) unstable; urgency=low
+
+  * debian/control: moved to dh 8
+  * debian/control: Standards Version to 3.9.2. (No changes needed).
+  * debian/rules: build-arch and build-indep according to lintian
+                  recommendation added
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 12 Dec 2011 18:00:00 +0100
+
+meep (1.1.1-6) unstable; urgency=low
+
+  * debian/control: We have to use the serial version of hdf5 here.
+                    Otherwise it is not possible to build the parallel
+                    and serial version of meep with hdf5 support from the
+                    same source package.
+                    For a real parallel version please use meep-mpich.
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Wed, 10 Nov 2010 19:00:00 +0100
+
+meep (1.1.1-5) unstable; urgency=low
+
+  * debian/control: (Closes: #600983)
+       dependency on libhdf5-mpi-dev added again 
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Tue, 09 Nov 2010 19:00:00 +0100
+
+meep (1.1.1-4) unstable; urgency=low
+
+  * debian/control: dependencies on chrpath added
+  * debian/control: bump Standards Version to 3.9.1. (No changes needed).
+  * debian/control: dependency on mpi-default-dev (Closes: #591160, #571445)
+    - this is needed to always depend on a working version of MPI on any
+      architecture
+    - dependency on libmpich1.0-dev and libhdf5-seriald-dev is not needed
+      anymore
+  * debian/control: due to changed dependencies of dependent packages, this
+                    package has to depend on libatlas-base-dev now
+  * debian/control: ${misc:Depends} added 
+  * debian/rules: remove rpath with chrpath
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Tue, 17 Aug 2010 18:00:00 +0200
+
+meep (1.1.1-3) unstable; urgency=low
+
+  * debian/rules: change configure script to produce meep-mpi paths
+                  everywhere (closes: #551822)
+  * debian/control: DM-Upload-Allowed added
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Thu, 29 Oct 2009 18:00:00 +0200
+
+meep (1.1.1-2) unstable; urgency=low
+
+  * debian/control: conflicts added for old libmeep versions
+    (closes: #548298, #548300)
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Fri, 25 Sep 2009 19:00:00 +0200
+
+meep (1.1.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #526352, #530868, #543431)
+  * debian/rules: dpatch deactivated again, patches are included in upstream
+  * debian/rules: added upstream file ChangeLog to package (pedantic lintian)
+  * debian/control: Standards-Version changed to 3.8.3
+  * debian/*.symbols*: Maintaining symbols files for these internal libraries 
+    does not appear to be a good idea at present as arch- and optimisation-
+    dependent symbols tend to slip in. So turning off generation of symbols 
+    files has a side-effec of fixing the build failures on armel, mips and 
+    mipsel. (also closes: #537813)
+  * upstream changed soname from 2 to 6
+  * added lintian overrides (see comments in override file):
+    - no-symbols-control-file
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 31 Aug 2009 18:00:00 +0200
+
+meep (0.20.3-3) unstable; urgency=low
+
+  * adding modified symbols files (Closes: #520185)
+    - for arch alpha, hppa, powerpc, s390, sparc
+  * added ldconfig in postinst and postrm for libmeep2 and libmeep-mpi2
+    to meet requirements of policy 8.1.1
+  * debian/control: Standards-Version changed to 3.8.1
+  * debian/control: depending on libctl-dev >=3.0.3-3 in order to use guile-1.8
+  * added non empty file meep-enums.scm
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Wed, 22 Apr 2009 19:45:00 +0200
+
+meep (0.20.3-2) unstable; urgency=low
+
+  * removed lintian warnings
+    - debian/control more detailed extended description
+    - debian/copyright changed License:-tag to correct value GPL-2+
+    - adding minimal symbols file for libmeep2 and libmeep-mpi2
+    - adding modified symbols files for arch amd64
+  * applied patch for FTBFS with gcc4.4 (Closes: #505002)
+  * debian/rules dpatch activated again
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Thu, 19 Feb 2009 19:30:00 +0100
+
+meep (0.20.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #491516, #491593, #491889)
+  * New maintainer (Closes: #481042)
+  * debian/control: Standards-Version changed to 3.8.0
+  * debian/control: Homepage: added
+  * debian/control: Build-Depends: changed to new name of libraries
+  * debian/control: meep 0.20 now depends on libctl 3.0.3
+  * soname of libraries increased to 2 by upstream
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Mon, 21 Jul 2008 18:30:00 +0100
+
+meep (0.10-2.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Add include to fix FTBFS on gcc4.3, closes: 455289
+  * Transition to gortran, closes: 468877
+  * make package binNMUable.
+
+ -- Riku Voipio <riku.voipio@iki.fi>  Sun, 09 Mar 2008 14:37:19 +0200
+
+meep (0.10-2) unstable; urgency=low
+
+  * Remove dependence on unexisting package meep-doc.
+  * Set priority to extra for meep-mpi because of the dependence on mpi.
+  * Conflicts between libmeep-dev and libmeep-mpi-dev (Closes: #404025, #404024)
+
+ -- Loïc Le Guyader <loic.leguyader@laposte.net>  Fri, 22 Dec 2006 16:50:32 +0100
+
+meep (0.10-1) unstable; urgency=low
+
+  * Initial release (Closes: #380223)
+
+ -- Loic Le Guyader <loic.leguyader@laposte.net>  Thu,  9 Nov 2006 21:46:45 +0000

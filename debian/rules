@@ -1,0 +1,51 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+# export DH_VERBOSE=1
+
+install_file    = /usr/bin/install -p -o root -g root -m 644
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+arch = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+
+ifneq ($(wildcard /usr/lib/$(DEB_HOST_MULTIARCH)/hdf5/serial/libhdf5.so),)
+  export DEB_CPPFLAGS_MAINT_APPEND := -I/usr/include/hdf5/serial
+  export DEB_LDFLAGS_MAINT_APPEND := -Wl,-L/usr/lib/$(DEB_HOST_MULTIARCH)/hdf5/serial
+endif
+
+CONFIGURE_FLAGS = --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+	--prefix=/usr --mandir=\$${prefix}/share/man \
+	--infodir=\$${prefix}/share/info \
+	--with-libctl=/usr/share/libctl \
+	--with-gcc-arch=no \
+	--enable-shared --with-pic --enable-cxx
+
+%:
+	dh $@ --with autoreconf --parallel
+
+override_dh_auto_configure:
+	F77=gfortran dh_auto_configure -- $(CONFIGURE_FLAGS)
+
+override_dh_auto_install:
+	dh_installchangelogs NEWS
+	dh_auto_install
+
+override_dh_clean:
+	# we do not need this anymore
+	rm -f tests/latest_output
+	dh_clean
+
+override_dh_auto_test:
+	echo ${arch}
+	if [ "${arch}" = "armel" ] || \
+	   [ "${arch}" = "mips" ] || \
+	   [ "${arch}" = "mipsel" ] || \
+	   [ "${arch}" = "poerpc" ] || \
+	   [ "${arch}" = "sparc" ] ; then \
+	  echo "Do not make tests on this architecture" ;\
+	else \
+	  echo "Do make tests on this architecture" ;\
+	  make check; \
+	fi
+
