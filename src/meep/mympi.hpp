@@ -19,6 +19,7 @@
 #define MEEP_MY_MPI_H
 
 #include <complex>
+#include <stddef.h>
 
 namespace meep {
 
@@ -39,8 +40,8 @@ class initialize {
 #  define NORETURN_ATTR __attribute__((noreturn))
 #  define PRINTF_ATTR(f,a) __attribute__((format(printf, f, a)))
 #else
-#  define NORETURN_ATTR 
-#  define PRINTF_ATTR(f,a) 
+#  define NORETURN_ATTR
+#  define PRINTF_ATTR(f,a)
 #endif
 
 void abort(const char *fmt, ...) NORETURN_ATTR PRINTF_ATTR(1,2);
@@ -49,11 +50,13 @@ int count_processors();
 int my_rank();
 bool am_really_master();
 inline int am_master() { return my_rank() == 0; }
+bool with_mpi();
 
 void send(int from, int to, double *data, int size=1);
 void broadcast(int from, double *data, int size);
 void broadcast(int from, char *data, int size);
 void broadcast(int from, int *data, int size);
+void broadcast(int from, size_t *data, int size);
 void broadcast(int from, std::complex<double> *data, int size);
 std::complex<double> broadcast(int from, std::complex<double> data);
 double broadcast(int from, double data);
@@ -62,19 +65,26 @@ bool broadcast(int from, bool);
 double max_to_master(double); // Only returns the correct value to proc 0.
 double max_to_all(double);
 int max_to_all(int);
+float sum_to_master(float); // Only returns the correct value to proc 0.
 double sum_to_master(double); // Only returns the correct value to proc 0.
 double sum_to_all(double);
 void sum_to_all(const double *in, double *out, int size);
+void sum_to_master(const float *in, float *out, int size);
 void sum_to_master(const double *in, double *out, int size);
 void sum_to_all(const float *in, double *out, int size);
 void sum_to_all(const std::complex<float> *in, std::complex<double> *out, int size);
 void sum_to_all(const std::complex<double> *in, std::complex<double> *out, int size);
+void sum_to_master(const std::complex<float> *in, std::complex<float> *out, int size);
 void sum_to_master(const std::complex<double> *in, std::complex<double> *out, int size);
 long double sum_to_all(long double);
 std::complex<double> sum_to_all(std::complex<double> in);
 std::complex<long double> sum_to_all(std::complex<long double> in);
 int sum_to_all(int);
 int partial_sum_to_all(int in);
+size_t sum_to_all(size_t);
+size_t partial_sum_to_all(size_t in);
+void sum_to_all(const size_t *in, size_t *out, int size);
+void sum_to_master(const size_t *in, size_t *out, int size);
 bool or_to_all(bool in);
 void or_to_all(const int *in, int *out, int size);
 bool and_to_all(bool in);

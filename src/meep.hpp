@@ -18,18 +18,21 @@
 #define MEEP_H
 
 #include <stdio.h>
+#include <stddef.h>
 #include <math.h>
 
 #include "meep/vec.hpp"
 #include "meep/mympi.hpp"
+
+#include <vector>
 
 namespace meep {
 
 /* We use the type realnum for large arrays, e.g. the fields.
    For local variables and small arrays, we use double precision,
    but for things like the fields we can often get away with
-   single precision (since the errors are not dominated by roundoff). 
-   However, we will default to using double-precision for large 
+   single precision (since the errors are not dominated by roundoff).
+   However, we will default to using double-precision for large
    arrays, as the factor of two in memory and the moderate increase
    in speed currently don't seem worth the loss of precision. */
 #define MEEP_SINGLE 0 // 1 for single precision, 0 for double
@@ -51,18 +54,18 @@ const double nan = NAN;
 const double nan = -7.0415659787563146e103; // ideally, a value never encountered in practice
 #endif
 
-/* generic base class, only used by subclassing: represents susceptibility 
+/* generic base class, only used by subclassing: represents susceptibility
    polarizability vector P = chi(omega) W  (where W = E or H). */
 class susceptibility {
 public:
-  susceptibility() { id = cur_id++; ntot = 0; next = NULL; 
+  susceptibility() { id = cur_id++; ntot = 0; next = NULL;
     FOR_COMPONENTS(c) FOR_DIRECTIONS(d) {
       sigma[c][d] = NULL; trivial_sigma[c][d] = true; } }
-  susceptibility(const susceptibility &s) { id = s.id; ntot = s.ntot; 
+  susceptibility(const susceptibility &s) { id = s.id; ntot = s.ntot;
     next = NULL; FOR_COMPONENTS(c) FOR_DIRECTIONS(d) {
       sigma[c][d] = NULL; trivial_sigma[c][d] = true; } }
   virtual susceptibility *clone() const;
-  virtual ~susceptibility() { 
+  virtual ~susceptibility() {
     FOR_COMPONENTS(c) FOR_DIRECTIONS(d) delete[] sigma[c][d];
     delete next; }
 
@@ -71,8 +74,8 @@ public:
 
   // update all of the internal polarization state given the W field
   // at the current time step, possibly the previous field W_prev, etc.
-  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2], 
-			realnum *W_prev[NUM_FIELD_COMPONENTS][2], 
+  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2],
+			realnum *W_prev[NUM_FIELD_COMPONENTS][2],
 			double dt, const grid_volume &gv,
 			void *P_internal_data) const {
     (void) P; (void) W; (void) W_prev; (void) dt; (void) gv;
@@ -83,7 +86,7 @@ public:
   // field.  Also given the fields array if it is needed for some reason.
   // Only update for ft fields.
   virtual void subtract_P(field_type ft,
-			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2], 
+			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2],
 			  void *P_internal_data) const {
     (void) ft; (void) f_minus_p; (void) P_internal_data;
   }
@@ -107,7 +110,7 @@ public:
      populations, or other data.  These routines return the size of
      this internal-data array and initialize it. */
   virtual void* new_internal_data(realnum *W[NUM_FIELD_COMPONENTS][2],
-				  const grid_volume &gv) const { 
+				  const grid_volume &gv) const {
     (void) W; (void) gv; return 0;
   }
   virtual void delete_internal_data(void *data) const;
@@ -133,7 +136,7 @@ public:
   virtual realnum *internal_notowned_ptr(int inotowned, component c, int n,
 					 void *P_internal_data) const {
     (void) inotowned; (void) n; (void) c; (void) P_internal_data; return 0; }
-  
+
   /* same thing as above, except this gives (possibly complex)
      internal fields that need to be multiplied by the same phase
      factor as the fields at boundaries.  Note: we assume internal fields
@@ -142,14 +145,14 @@ public:
 					   void *P_internal_data) const {
     (void) c; (void) P_internal_data; return 0; }
   // real/imaginary parts offsets for cmp = 0/1
-  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp, 
-					  int n, 
+  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp,
+					  int n,
 					  void *P_internal_data) const {
-    (void) inotowned; (void) n; (void) c; (void) cmp; (void) P_internal_data; 
+    (void) inotowned; (void) n; (void) c; (void) cmp; (void) P_internal_data;
     return 0; }
-  
+
   susceptibility *next;
-  int ntot;
+  size_t ntot;
   realnum *sigma[NUM_FIELD_COMPONENTS][5];
 
   /* trivial_sigma[c][d] is true only if *none* of the processes has a
@@ -166,7 +169,7 @@ private:
   int id; // id for this object and its clones, for comparison purposes
 };
 
-/* a Lorentzian susceptibility 
+/* a Lorentzian susceptibility
    \chi(\omega) = sigma * omega_0^2 / (\omega_0^2 - \omega^2 - i\gamma \omega)
   If no_omega_0_denominator is true, then we omit the omega_0^2 factor in the
   denominator to obtain a Drude model. */
@@ -175,14 +178,14 @@ public:
   lorentzian_susceptibility(double omega_0, double gamma, bool no_omega_0_denominator = false) : omega_0(omega_0), gamma(gamma), no_omega_0_denominator(no_omega_0_denominator) {}
   virtual susceptibility *clone() const { return new lorentzian_susceptibility(*this); }
   virtual ~lorentzian_susceptibility() {}
-  
-  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2], 
-			realnum *W_prev[NUM_FIELD_COMPONENTS][2], 
+
+  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2],
+			realnum *W_prev[NUM_FIELD_COMPONENTS][2],
 			double dt, const grid_volume &gv,
 			void *P_internal_data) const;
 
   virtual void subtract_P(field_type ft,
-			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2], 
+			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2],
 			  void *P_internal_data) const;
 
   virtual void *new_internal_data(realnum *W[NUM_FIELD_COMPONENTS][2],
@@ -193,8 +196,8 @@ public:
 
   virtual int num_cinternal_notowned_needed(component c,
 					    void *P_internal_data) const;
-  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp, 
-					  int n, 
+  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp,
+					  int n,
 					  void *P_internal_data) const;
 protected:
   double omega_0, gamma;
@@ -206,11 +209,11 @@ protected:
 class noisy_lorentzian_susceptibility : public lorentzian_susceptibility {
 public:
   noisy_lorentzian_susceptibility(double noise_amp, double omega_0, double gamma, bool no_omega_0_denominator = false) : lorentzian_susceptibility(omega_0, gamma, no_omega_0_denominator), noise_amp(noise_amp) {}
-  
+
   virtual susceptibility *clone() const { return new noisy_lorentzian_susceptibility(*this); }
-  
-  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2], 
-			realnum *W_prev[NUM_FIELD_COMPONENTS][2], 
+
+  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2],
+			realnum *W_prev[NUM_FIELD_COMPONENTS][2],
 			double dt, const grid_volume &gv,
 			void *P_internal_data) const;
 
@@ -232,27 +235,27 @@ public:
   virtual susceptibility *clone() const { return new multilevel_susceptibility(*this); }
   virtual ~multilevel_susceptibility();
 
-  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2], 
-			realnum *W_prev[NUM_FIELD_COMPONENTS][2], 
+  virtual void update_P(realnum *W[NUM_FIELD_COMPONENTS][2],
+			realnum *W_prev[NUM_FIELD_COMPONENTS][2],
 			double dt, const grid_volume &gv,
 			void *P_internal_data) const;
 
   virtual void subtract_P(field_type ft,
-			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2], 
+			  realnum *f_minus_p[NUM_FIELD_COMPONENTS][2],
 			  void *P_internal_data) const;
 
   virtual void *new_internal_data(realnum *W[NUM_FIELD_COMPONENTS][2],
 				  const grid_volume &gv) const;
   virtual void init_internal_data(realnum *W[NUM_FIELD_COMPONENTS][2],
-				  double dt, const grid_volume &gv, 
+				  double dt, const grid_volume &gv,
 				  void *data) const;
   virtual void *copy_internal_data(void *data) const;
   virtual void delete_internal_data(void *data) const;
 
   virtual int num_cinternal_notowned_needed(component c,
 					    void *P_internal_data) const;
-  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp, 
-					  int n, 
+  virtual realnum *cinternal_notowned_ptr(int inotowned, component c, int cmp,
+					  int n,
 					  void *P_internal_data) const;
 
   // always need notowned W and W_prev for E dot dP/dt terms
@@ -284,37 +287,41 @@ public:
   typedef enum {
     READONLY, READWRITE, WRITE
   } access_mode;
-  
+
   h5file(const char *filename_, access_mode m=READWRITE, bool parallel_=true);
   ~h5file(); // closes the files (and any open dataset)
-  
+
   bool ok();
-  
-  realnum *read(const char *dataname, int *rank, int *dims, int maxrank);
-  void write(const char *dataname, int rank, const int *dims, realnum *data,
+
+  realnum *read(const char *dataname, int *rank, size_t *dims, int maxrank);
+  void write(const char *dataname, int rank, const size_t *dims, realnum *data,
 	     bool single_precision = true);
-  
+
   char *read(const char *dataname);
   void write(const char *dataname, const char *data);
-  
-  void create_data(const char *dataname, int rank, const int *dims,
+
+  void create_data(const char *dataname, int rank, const size_t *dims,
 		   bool append_data = false,
 		   bool single_precision = true);
-  void extend_data(const char *dataname, int rank, const int *dims);
+  void extend_data(const char *dataname, int rank, const size_t *dims);
   void create_or_extend_data(const char *dataname, int rank,
-			     const int *dims,
+			     const size_t *dims,
 			     bool append_data, bool single_precision);
-  void write_chunk(int rank, const int *chunk_start, const int *chunk_dims,
+  void write_chunk(int rank, const size_t *chunk_start, const size_t *chunk_dims,
 		   realnum *data);
+  void write_chunk(int rank, const size_t *chunk_start, const size_t *chunk_dims,
+       size_t *data);
   void done_writing_chunks();
-  
-  void read_size(const char *dataname, int *rank, int *dims, int maxrank);
-  void read_chunk(int rank, const int *chunk_start, const int *chunk_dims,
+
+  void read_size(const char *dataname, int *rank, size_t *dims, int maxrank);
+  void read_chunk(int rank, const size_t *chunk_start, const size_t *chunk_dims,
 		  realnum *data);
-  
+  void read_chunk(int rank, const size_t *chunk_start, const size_t *chunk_dims,
+		  size_t *data);
+
   void remove();
   void remove_data(const char *dataname);
-  
+
   const char *file_name() const { return filename; }
 
   void prevent_deadlock(); // hackery for exclusive mode
@@ -327,8 +334,16 @@ private:
   void unset_cur();
   void set_cur(const char *dataname, void *data_id);
   char *cur_dataname;
-  bool cur_append_data;
-  
+
+  /* store hid_t values as hid_t* cast to void*, so that
+     files including meep.h don't need hdf5.h */
+  void *id; /* file */
+  void *cur_id; /* dataset, if any */
+
+  void *get_id(); // get current (file) id, opening/creating file if needed
+  void close_id();
+
+public:
   /* linked list to keep track of which datasets we are extending...
      this is necessary so that create_or_extend_data can know whether
      to create (overwrite) a dataset or extend it. */
@@ -338,14 +353,6 @@ private:
     struct extending_s *next;
   } *extending;
   extending_s *get_extending(const char *dataname) const;
-  
-  /* store hid_t values as hid_t* cast to void*, so that
-     files including meep.h don't need hdf5.h */
-  void *id; /* file */
-  void *cur_id; /* dataset, if any */
-
-  void *get_id(); // get current (file) id, opening/creating file if needed
-  void close_id();
 };
 
 typedef double (*pml_profile_func)(double u, void *func_data);
@@ -354,7 +361,7 @@ typedef double (*pml_profile_func)(double u, void *func_data);
 #define DEFAULT_SUBPIXEL_MAXEVAL 100000
 
 /* This class is used to compute position-dependent material properties
-   like the dielectric function, permeability (mu), polarizability sigma, 
+   like the dielectric function, permeability (mu), polarizability sigma,
    nonlinearities, et cetera.  Simple cases of stateless functions are
    handled by canned subclasses below, but more complicated cases
    can be handled by creating a user-defined subclass of material_function.
@@ -366,12 +373,12 @@ class material_function {
 public:
   material_function() {}
   virtual ~material_function() {}
-  
+
   /* Specify a restricted grid_volume: all subsequent eps/sigma/etc
      calls will be for points inside v, until the next set_volume. */
   virtual void set_volume(const volume &v) {(void)v;}
   virtual void unset_volume(void) {} // unrestrict the grid_volume
-  
+
   virtual double chi1p1(field_type ft, const vec &r) { (void)ft; (void)r; return 1.0; }
 
   /* scalar dielectric function */
@@ -380,11 +387,11 @@ public:
   /* scalar permeability function */
   virtual bool has_mu() { return false; } /* true if mu != 1 */
   virtual double mu(const vec &r) { return chi1p1(H_stuff, r);  }
-  
+
   /* scalar conductivity function */
   virtual bool has_conductivity(component c) { (void)c; return false; }
-  virtual double conductivity(component c, const vec &r) { 
-    (void) c; (void)r; return 0.0; }  
+  virtual double conductivity(component c, const vec &r) {
+    (void) c; (void)r; return 0.0; }
 
   // fallback routine based on spherical quadrature
   vec normal_vector(field_type ft, const volume &v);
@@ -393,10 +400,10 @@ public:
      ... virtual so that e.g. libctl can override with more-efficient
      libctlgeom-based routines.  maxeval == 0 if no averaging desired. */
   virtual void eff_chi1inv_row(component c, double chi1inv_row[3],
-			       const volume &v, 
-			       double tol=DEFAULT_SUBPIXEL_TOL, 
+			       const volume &v,
+			       double tol=DEFAULT_SUBPIXEL_TOL,
 			       int maxeval=DEFAULT_SUBPIXEL_MAXEVAL);
-  
+
   /* polarizability sigma function: return c'th row of tensor */
   virtual void sigma_row(component c, double sigrow[3], const vec &r) {
     (void) c; (void) r; sigrow[0] = sigrow[1] = sigrow[2] = 0.0;
@@ -411,16 +418,16 @@ public:
 
 class simple_material_function : public material_function {
   double (*f)(const vec &);
-  
+
 public:
   simple_material_function(double (*func)(const vec &)) { f = func; }
-  
+
   virtual ~simple_material_function() {}
-  
+
   virtual double chi1p1(field_type ft, const vec &r) { (void)ft; return f(r); }
   virtual double eps(const vec &r) { return f(r); }
   virtual double mu(const vec &r) { return f(r); }
-  virtual double conductivity(component c, const vec &r) { 
+  virtual double conductivity(component c, const vec &r) {
     (void)c; return f(r); }
   virtual void sigma_row(component c, double sigrow[3], const vec &r) {
     sigrow[0] = sigrow[1] = sigrow[2] = 0.0;
@@ -495,17 +502,17 @@ double pml_quadratic_profile(double, void*);
 class boundary_region {
 public:
   typedef enum { NOTHING_SPECIAL, PML } boundary_region_kind;
-  
+
   boundary_region() :
     kind(NOTHING_SPECIAL), thickness(0.0), Rasymptotic(1e-16), mean_stretch(1.0), pml_profile(NULL), pml_profile_data(NULL), pml_profile_integral(1.0), pml_profile_integral_u(1.0), d(NO_DIRECTION), side(Low), next(0) {}
   boundary_region(boundary_region_kind kind, double thickness, double Rasymptotic, double mean_stretch, pml_profile_func pml_profile, void* pml_profile_data, double pml_profile_integral, double pml_profile_integral_u, direction d, boundary_side side, boundary_region *next = 0) : kind(kind), thickness(thickness), Rasymptotic(Rasymptotic), mean_stretch(mean_stretch), pml_profile(pml_profile), pml_profile_data(pml_profile_data), pml_profile_integral(pml_profile_integral), pml_profile_integral_u(pml_profile_integral_u), d(d), side(side), next(next) {}
 
-  boundary_region(const boundary_region &r) : kind(r.kind), thickness(r.thickness), Rasymptotic(r.Rasymptotic), mean_stretch(r.mean_stretch), pml_profile(r.pml_profile), pml_profile_data(r.pml_profile_data), pml_profile_integral(r.pml_profile_integral), pml_profile_integral_u(r.pml_profile_integral_u), d(r.d), side(r.side) { 
+  boundary_region(const boundary_region &r) : kind(r.kind), thickness(r.thickness), Rasymptotic(r.Rasymptotic), mean_stretch(r.mean_stretch), pml_profile(r.pml_profile), pml_profile_data(r.pml_profile_data), pml_profile_integral(r.pml_profile_integral), pml_profile_integral_u(r.pml_profile_integral_u), d(r.d), side(r.side) {
     next = r.next ? new boundary_region(*r.next) : 0;
   }
 
   ~boundary_region() { if (next) delete next; }
-  
+
   void operator=(const boundary_region &r) {
     kind = r.kind; thickness = r.thickness; Rasymptotic = r.Rasymptotic; mean_stretch = r.mean_stretch;
     pml_profile = r.pml_profile; pml_profile_data = r.pml_profile_data;
@@ -558,6 +565,7 @@ class structure {
  public:
   structure_chunk **chunks;
   int num_chunks;
+  bool shared_chunks; // whether modifications to chunks will be visible to fields objects
   grid_volume gv, user_volume;
   double a, Courant, dt; // res. a, Courant num., and timestep dt=Courant/a
   volume v;
@@ -576,7 +584,7 @@ class structure {
 	    bool use_anisotropic_averaging=false,
 	    double tol=DEFAULT_SUBPIXEL_TOL,
 	    int maxeval=DEFAULT_SUBPIXEL_MAXEVAL);
-  structure(const grid_volume &gv, double eps(const vec &), 
+  structure(const grid_volume &gv, double eps(const vec &),
 	    const boundary_region &br = boundary_region(),
 	    const symmetry &s = meep::identity(),
 	    int num_chunks = 0, double Courant = 0.5,
@@ -619,7 +627,7 @@ class structure {
   void set_chi2(component c, material_function &eps);
   void set_chi2(material_function &eps);
   void set_chi2(double eps(const vec &));
-  
+
   void add_susceptibility(double sigma(const vec &), field_type c, const susceptibility &sus);
   void add_susceptibility(material_function &sigma, field_type c, const susceptibility &sus);
   void remove_susceptibilities();
@@ -629,6 +637,10 @@ class structure {
 
   bool equal_layout(const structure &) const;
   void print_layout(void) const;
+
+  // structure_dump.cpp
+  void dump(const char *filename);
+  void load(const char *filename);
 
   // monitor.cpp
   double get_chi1inv(component, direction, const ivec &origloc) const;
@@ -645,16 +657,15 @@ class structure {
 
  private:
   void use_pml(direction d, boundary_side b, double dx);
-  void add_to_effort_volumes(const grid_volume &new_effort_volume, 
+  void add_to_effort_volumes(const grid_volume &new_effort_volume,
 			     double extra_effort);
   void choose_chunkdivision(const grid_volume &gv, int num_chunks,
-			    const boundary_region &br, const symmetry &s);
+			     const boundary_region &br, const symmetry &s);
   void check_chunks();
   void changing_chunks();
 };
 
 class src_vol;
-class bandsdata;
 class fields;
 class fields_chunk;
 class flux_vol;
@@ -673,14 +684,14 @@ class src_time {
 
   src_time() { is_integrated = true; current_time = nan; current_current = 0.0; next = NULL; }
   virtual ~src_time() { delete next; }
-  src_time(const src_time &t) { 
+  src_time(const src_time &t) {
        is_integrated = t.is_integrated;
        current_time = t.current_time;
        current_current = t.current_current;
        current_dipole = t.current_dipole;
        if (t.next) next = t.next->clone(); else next = NULL;
   }
-  
+
   std::complex<double> dipole() const { return current_dipole; }
   std::complex<double> current() const { return current_current; }
   void update(double time, double dt) {
@@ -694,13 +705,13 @@ class src_time {
   // subclasses *can* override this method in order to specify the
   // current directly rather than as the derivative of dipole.
   // in that case you would probably ignore the dt argument.
-  virtual std::complex<double> current(double time, double dt) const { 
+  virtual std::complex<double> current(double time, double dt) const {
     return ((dipole(time + dt) - dipole(time)) / dt);
   }
 
   double last_time_max() { return last_time_max(0.0); }
   double last_time_max(double after);
-  
+
   src_time *add_to(src_time *others, src_time **added) const;
   src_time *next;
 
@@ -740,19 +751,19 @@ class gaussian_src_time : public src_time {
 // Continuous (CW) source with (optional) slow turn-on and/or turn-off.
 class continuous_src_time : public src_time {
  public:
-  continuous_src_time(std::complex<double> f, double w = 0.0, 
+  continuous_src_time(std::complex<double> f, double w = 0.0,
 		      double st = 0.0, double et = infinity,
 		      double s = 3.0) : freq(f), width(w), start_time(float(st)),
 					end_time(float(et)), slowness(s) {}
   virtual ~continuous_src_time() {}
-  
+
   virtual std::complex<double> dipole(double time) const;
   virtual double last_time() const { return end_time; };
   virtual src_time *clone() const { return new continuous_src_time(*this); }
   virtual bool is_equal(const src_time &t) const;
   virtual std::complex<double> frequency() const { return freq; }
   virtual void set_frequency(std::complex<double> f) { freq = f; }
-  
+
  private:
   std::complex<double> freq;
   double width, start_time, end_time, slowness;
@@ -765,8 +776,8 @@ class custom_src_time : public src_time {
 		  double st = -infinity, double et = infinity)
     : func(func), data(data), start_time(float(st)), end_time(float(et)) {}
   virtual ~custom_src_time() {}
-  
-  virtual std::complex<double> current(double time, double dt) const { 
+
+  virtual std::complex<double> current(double time, double dt) const {
     if (is_integrated) return src_time::current(time,dt);
     else return dipole(time);
   }
@@ -775,7 +786,7 @@ class custom_src_time : public src_time {
   virtual double last_time() const { return end_time; };
   virtual src_time *clone() const { return new custom_src_time(*this); }
   virtual bool is_equal(const src_time &t) const;
-  
+
  private:
   std::complex<double> (*func)(double t, void *);
   void *data;
@@ -823,17 +834,26 @@ public:
 	    ivec is_, ivec ie_,
 	    vec s0_, vec s1_, vec e0_, vec e1_,
 	    double dV0_, double dV1_,
-	    std::complex<double> scale_,
-	    std::complex<double> extra_weight_,
-	    component c_,
-	    bool use_centered_grid,
-            ivec shift_, const symmetry &S_, int sn_, int vc,
+	    component c_, bool use_centered_grid,
+            std::complex<double> phase_factor,
+            ivec shift_, const symmetry &S_, int sn_,
 	    const void *data_);
   ~dft_chunk();
-  
+
   void update_dft(double time);
 
   void scale_dft(std::complex<double> scale);
+
+  // chunk-by-chunk helper routine called by
+  // fields::process_dft_component
+  std::complex<double> process_dft_component(int rank, direction *ds,
+                                             ivec min_corner, ivec max_corner,
+                                             int num_freq,
+                                             h5file *file, double *buffer,
+                                             int reim,
+                                             std::complex<double> *field_array,
+                                             void *mode1_data, void *mode2_data,
+                                             component c_conjugate);
 
   void operator-=(const dft_chunk &chunk);
 
@@ -843,27 +863,51 @@ public:
 
   component c; // component to DFT (possibly transformed by symmetry)
 
-  int N; // number of spatial points (on epsilon grid)
+  size_t N; // number of spatial points (on epsilon grid)
   std::complex<realnum> *dft; // N x Nomega array of DFT values.
 
-  struct dft_chunk *next_in_chunk; // per-fields_chunk list of DFT chunks
-  struct dft_chunk *next_in_dft; // next for this particular DFT vol./component
+  class dft_chunk *next_in_chunk; // per-fields_chunk list of DFT chunks
+  class dft_chunk *next_in_dft; // next for this particular DFT vol./component
 
-  /* When computing things like -0.5*|E|^2 for the stress tensor,
-     we cannot incorporate the minus sign into the scale factor
-     because we only ever compute |scale|^2.  Thus, it is necessary
-     to store an additional weight factor with the dft_chunk to record
-     any additional negative or complex weight factor to be used
-     in computations involving the fourier-transformed fields.  Because
-     it is used in computations involving dft[...], it needs to be public. */
-     std::complex<double> extra_weight;
+  /* There are several types of weight factors associated with DFT fields: */
+  /*  (a) To accelerate the computation of things like Poynting flux, it   */
+  /*      is convenient to store certain DFT field components with built-in*/
+  /*      constant prefactors (usually just \pm 1). For example, in a      */
+  /*      dft_flux_plane normal to the Z direction the Ey component is     */
+  /*      stored with a built-in minus sign, while the other components    */
+  /*      (Ex, Hx, Hy) are not. This factor is already included in the     */
+  /*      `scale` field, but we also need to keep track of it separately   */
+  /*      so we can divide it out when looking up the values of individual */
+  /*      DFT field components. So we store it as `stored_weight.`         */
+  /*                                                                       */
+  /*  (b) For similar reasons, it is convenient to store certain DFT field */
+  /*      components with built-in volume factors to accelerate numerical  */
+  /*      integrations. In this case the prefactor is not constant (it     */
+  /*      varies from grid point to grid point) so we can't store it in    */
+  /*      the dft_chunk structure like stored_weight; instead we store a   */
+  /*      flag to indicate that it is present in the stored field          */
+  /*      components. This is the include_dV_and_interp_weights flag.      */
+  /*      (The sqrt_dV_and_interp_weights flag indicates that the sqrt of  */
+  /*      the volume factor is stored instead.)                            */
+  /*                                                                       */
+  /*  (c) When computing things like -0.5*|E|^2 for the stress tensor, we  */
+  /*      we cannot incorporate the minus sign into the scale factor       */
+  /*      because we only ever compute |scale|^2. Thus, it is necessary    */
+  /*      to store an additional weight factor with the dft_chunk to record*/
+  /*      any additional negative or complex weight factor to be used in   */
+  /*      in computations involving the fourier-transformed fields. This   */
+  /*      is the extra_weight field. Because it is used in computations    */
+  /*       involving dft[...], it needs to be public.                      */
+  std::complex<double > stored_weight;
+  bool include_dV_and_interp_weights;
+  bool sqrt_dV_and_interp_weights;
+  std::complex<double> extra_weight;
 
   // parameters passed from field_integrate:
   fields_chunk *fc;
   ivec is, ie;
   vec s0, s1, e0, e1;
   double dV0, dV1;
-  bool sqrt_dV_and_interp_weights;
   std::complex<double> scale; // scale factor * phase from shift and symmetry
   ivec shift;
   symmetry S; int sn;
@@ -871,7 +915,7 @@ public:
   // cache of exp(iwt) * scale, of length Nomega
   std::complex<realnum> *dft_phase;
 
-  int avg1, avg2; // index offsets for average to get epsilon grid
+  ptrdiff_t avg1, avg2; // index offsets for average to get epsilon grid
 
   int vc; // component descriptor from the original volume
 };
@@ -890,7 +934,8 @@ class dft_flux {
 public:
   dft_flux(const component cE_, const component cH_,
 	   dft_chunk *E_, dft_chunk *H_,
-	   double fmin, double fmax, int Nf);
+	   double fmin, double fmax, int Nf,
+	   const volume &where_, direction normal_direction_);
   dft_flux(const dft_flux &f);
 
   double *flux();
@@ -913,13 +958,15 @@ public:
   int Nfreq;
   dft_chunk *E, *H;
   component cE, cH;
+  volume where;
+  direction normal_direction;
 };
 
 // stress.cpp (normally created with fields::add_dft_force)
 class dft_force {
 public:
   dft_force(dft_chunk *offdiag1_, dft_chunk *offdiag2_, dft_chunk *diag_,
-	    double fmin, double fmax, int Nf);
+	    double fmin, double fmax, int Nf, const volume &where_);
   dft_force(const dft_force &f);
 
   double *force();
@@ -941,6 +988,7 @@ public:
   double freq_min, dfreq;
   int Nfreq;
   dft_chunk *offdiag1, *offdiag2, *diag;
+  volume where;
 };
 
 // near2far.cpp (normally created with fields::add_dft_near2far)
@@ -949,7 +997,8 @@ public:
   /* fourier tranforms of tangential E and H field components in a
      medium with the given scalar eps and mu */
   dft_near2far(dft_chunk *F,
-               double fmin, double fmax, int Nf, double eps, double mu);
+               double fmin, double fmax, int Nf,
+               double eps, double mu, const volume &where_);
   dft_near2far(const dft_near2far &f);
 
   /* return an array (Ex,Ey,Ez,Hx,Hy,Hz) x Nfreq of the far fields at x */
@@ -983,6 +1032,7 @@ public:
   int Nfreq;
   dft_chunk *F;
   double eps, mu;
+  volume where;
 };
 
 /* Class to compute local-density-of-states spectra: the power spectrum
@@ -1008,6 +1058,21 @@ private:
 public:
   double omega_min, domega;
   int Nomega;
+};
+
+// dft.cpp (normally created with fields::add_dft_fields)
+class dft_fields{
+public:
+  dft_fields(dft_chunk *chunks, double freq_min, double freq_max, int Nfreq, const volume &where);
+
+  void scale_dfts(std::complex<double> scale);
+
+  void remove();
+
+  double freq_min, dfreq;
+  int Nfreq;
+  dft_chunk *chunks;
+  volume where;
 };
 
 enum in_or_out { Incoming=0, Outgoing };
@@ -1048,9 +1113,9 @@ class fields_chunk {
   dft_chunk *dft_chunks;
 
   realnum **zeroes[NUM_FIELD_TYPES]; // Holds pointers to metal points.
-  int num_zeroes[NUM_FIELD_TYPES];
+  size_t num_zeroes[NUM_FIELD_TYPES];
   realnum **connections[NUM_FIELD_TYPES][CONNECT_COPY+1][Outgoing+1];
-  int num_connections[NUM_FIELD_TYPES][CONNECT_COPY+1][Outgoing+1];
+  size_t num_connections[NUM_FIELD_TYPES][CONNECT_COPY+1][Outgoing+1];
   std::complex<realnum> *connection_phases[NUM_FIELD_TYPES];
 
   int npol[NUM_FIELD_TYPES]; // only E_stuff and H_stuff are used
@@ -1063,7 +1128,6 @@ class fields_chunk {
   bool zero_fields_near_cylorigin; // fields=0 m pixels near r=0 for stability
   double beta;
   int is_real;
-  bandsdata *bands;
   src_vol *sources[NUM_FIELD_TYPES];
   structure_chunk *new_s;
   structure_chunk *s;
@@ -1097,11 +1161,11 @@ class fields_chunk {
   std::complex<double> get_field(component, const vec &) const;
 
   double get_chi1inv(component, direction, const ivec &iloc) const;
-  
+
   void backup_component(component c);
   void average_with_backup(component c);
   void restore_component(component c);
-  
+
   void set_output_directory(const char *name);
   void verbose(int gv=1) { verbosity = gv; }
 
@@ -1115,7 +1179,7 @@ class fields_chunk {
   bool needs_W_notowned(component c);
   // fields.cpp
   void remove_sources();
-  void remove_susceptibilities();
+  void remove_susceptibilities(bool shared_chunks);
   void zero_fields();
 
   // update_eh.cpp
@@ -1134,7 +1198,7 @@ class fields_chunk {
     solve_cw_omega = 0.0;
   }
 
- private: 
+ private:
   // we set a flag during cw_solve to replace some
   // time-dependent stuff with the analogous frequency-domain operation
   bool doing_solve_cw; // true when inside solve_cw
@@ -1146,8 +1210,6 @@ class fields_chunk {
   component plus_component[NUM_FIELD_COMPONENTS], minus_component[NUM_FIELD_COMPONENTS];
   direction plus_deriv_direction[NUM_FIELD_COMPONENTS],
             minus_deriv_direction[NUM_FIELD_COMPONENTS];
-  // bands.cpp
-  void record_bands(int tcount);
   // step.cpp
   void phase_in_material(structure_chunk *s);
   void phase_material(int phasein_time);
@@ -1161,7 +1223,7 @@ class fields_chunk {
   void initialize_with_nth_te(int n, double kz);
   void initialize_with_nth_tm(int n, double kz);
   // boundaries.cpp
-  void alloc_extra_connections(field_type, connect_phase, in_or_out, int);
+  void alloc_extra_connections(field_type, connect_phase, in_or_out, size_t);
   // dft.cpp
   void update_dfts(double timeE, double timeH);
 
@@ -1176,7 +1238,7 @@ typedef void (*field_chunkloop)(fields_chunk *fc, int ichunk, component cgrid,
 				ivec is, ivec ie,
 				vec s0, vec s1, vec e0, vec e1,
 				double dV0, double dV1,
-				ivec shift, std::complex<double> shift_phase, 
+				ivec shift, std::complex<double> shift_phase,
 				const symmetry &S, int sn,
 				void *chunkloop_data);
 typedef std::complex<double> (*field_function)(const std::complex<double> *fields,
@@ -1189,9 +1251,17 @@ typedef double (*field_rfunction)(const std::complex<double> *fields,
 field_rfunction derived_component_func(derived_component c, const grid_volume &gv,
 				       int &nfields, component cs[12]);
 
+/***************************************************************/
+/* prototype for optional user-supplied function to provide an */
+/* initial estimate of the wavevector of mode #mode at         */
+/* frequency freq for eigenmode calculations                   */
+/***************************************************************/
+typedef vec (*kpoint_func)(double freq, int mode, void *user_data);
+
 class fields {
  public:
   int num_chunks;
+  bool shared_chunks;
   fields_chunk **chunks;
   src_time *sources;
   flux_vol *fluxes;
@@ -1202,9 +1272,9 @@ class fields {
   realnum **comm_blocks[NUM_FIELD_TYPES];
   // This is the same size as each comm_blocks array, and store the sizes
   // of the comm blocks themselves for each connection-phase type
-  int *comm_sizes[NUM_FIELD_TYPES][CONNECT_COPY+1];
-  int comm_size_tot(int f, int pair) const {
-    int sum = 0; for (int ip=0; ip<3; ++ip) sum+=comm_sizes[f][ip][pair];
+  size_t *comm_sizes[NUM_FIELD_TYPES][CONNECT_COPY+1];
+  size_t comm_size_tot(int f, int pair) const {
+    size_t sum = 0; for (int ip=0; ip<3; ++ip) sum+=comm_sizes[f][ip][pair];
     return sum;
   }
 
@@ -1217,8 +1287,8 @@ class fields {
   std::complex<double> k[5], eikna[5];
   double coskna[5], sinkna[5];
   boundary_condition boundaries[2][5];
-  bandsdata *bands;
   char *outdir;
+  bool components_allocated;
 
   // fields.cpp methods:
   fields(structure *, double m=0, double beta=0,
@@ -1285,11 +1355,53 @@ class fields {
 		   bool append_data = false,
 		   bool single_precision = false,
 		   const char *prefix = 0);
-  h5file *open_h5file(const char *name, 
+  h5file *open_h5file(const char *name,
 		      h5file::access_mode mode = h5file::WRITE,
 		      const char *prefix = NULL, bool timestamp = false);
   const char *h5file_name(const char *name,
 			  const char *prefix = NULL, bool timestamp = false);
+
+  // array_slice.cpp methods
+
+  // given a subvolume, compute the dimensions of the array slice
+  // needed to store field data for that subvolume.
+  // the data parameter is used internally in get_array_slice
+  // and should be ignored by external callers.
+  int get_array_slice_dimensions(const volume &where, size_t dims[3], void *data=0);
+
+  // given a subvolume, return a column-major array containing
+  // the given function of the field components in that subvolume
+  // if slice is non-null, it must be a user-allocated buffer
+  // of the correct size.
+  // otherwise, a new buffer is allocated and returned; it
+  // must eventually be caller-deallocated via delete[].
+  double *get_array_slice(const volume &where,
+                          std::vector<component> components,
+                          field_rfunction rfun, void *fun_data,
+                          double *slice=0);
+
+  std::complex<double> *get_complex_array_slice(const volume &where,
+                                   std::vector<component> components,
+                                   field_function fun,
+                                   void *fun_data,
+                                   std::complex<double> *slice=0);
+
+  // alternative entry points for when you have no field
+  // function, i.e. you want just a single component or
+  // derived component.)
+  double *get_array_slice(const volume &where, component c, double *slice=0);
+  double *get_array_slice(const volume &where, derived_component c, double *slice=0);
+  std::complex<double> *get_complex_array_slice(const volume &where,
+                                                component c,
+                                                std::complex<double> *slice=0);
+
+  // master routine for all above entry points
+  void *do_get_array_slice(const volume &where,
+                           std::vector<component> components,
+                           field_function fun,
+                           field_rfunction rfun,
+                           void *fun_data,
+                           void *vslice);
 
   // step.cpp methods:
   double last_step_output_wall_time;
@@ -1314,31 +1426,59 @@ class fields {
   void add_point_source(component c, const src_time &src,
                         const vec &, std::complex<double> amp = 1.0);
   void add_volume_source(component c, const src_time &src,
-			 const volume &, 
+			 const volume &,
 			 std::complex<double> A(const vec &),
 			 std::complex<double> amp = 1.0);
   void add_volume_source(component c, const src_time &src,
-			 const volume &, 
+			 const volume &,
 			 std::complex<double> amp = 1.0);
   void require_component(component c);
 
   // mpb.cpp
+
+  // the return value of get_eigenmode is an opaque pointer
+  // that can be passed to eigenmode_amplitude() to get
+  // values of field components at arbitrary points in space.
+  // call destroy_eigenmode_data() to deallocate it when finished.
+  void *get_eigenmode(double omega_src, direction d, const volume where,
+                      const volume eig_vol, int band_num,
+                      const vec &kpoint, bool match_frequency,
+                      int parity, double resolution,
+                      double eigensolver_tol, bool verbose=false);
+
   void add_eigenmode_source(component c, const src_time &src,
-			    direction d, const volume &where,
+	  		    direction d, const volume &where,
 			    const volume &eig_vol,
-			    int band_num, 
+			    int band_num,
 			    const vec &kpoint, bool match_frequency,
 			    int parity,
 			    double eig_resolution, double eigensolver_tol,
 			    std::complex<double> amp,
 			    std::complex<double> A(const vec &) = 0);
 
+  void get_eigenmode_coefficients(dft_flux flux,
+                                  const volume &eig_vol,
+                                  int *bands, int num_bands, int parity,
+                  			          double eig_resolution, double eigensolver_tol,
+                                  std::complex<double> *coeffs,
+                                  double *vgrp, kpoint_func user_kpoint_func=0,
+                                  void *user_kpoint_data=0);
+
+  void get_eigenmode_coefficients(dft_flux flux,
+                                  int *bands, int num_bands, int parity,
+                                  std::complex<double> *coeffs,
+                                  double *vgrp, kpoint_func user_kpoint_func=0,
+                                  void *user_kpoint_data=0) {
+      get_eigenmode_coefficients(flux, flux.where, bands, num_bands, parity,
+          0.0, 1e-7, coeffs, vgrp, user_kpoint_func, user_kpoint_data);
+  }
+
   // initialize.cpp:
   void initialize_field(component, std::complex<double> f(const vec &));
   void initialize_with_nth_te(int n);
   void initialize_with_nth_tm(int n);
-  void initialize_with_n_te(int n);
-  void initialize_with_n_tm(int n);
+  void initialize_with_n_te(int ntot);
+  void initialize_with_n_tm(int ntot);
   int phase_in_material(const structure *s, double time);
   int is_phasing();
 
@@ -1348,7 +1488,7 @@ class fields {
 		      component cgrid = Centered,
 		      bool use_symmetry = true,
 		      bool snap_unit_dims = false);
-  
+
   // integrate.cpp
   std::complex<double> integrate(int num_fields, const component *components,
 			    field_function fun, void *fun_data_,
@@ -1361,7 +1501,7 @@ class fields {
   std::complex<double> integrate2(const fields &fields2,
 			     int num_fields1,
 			     const component *components1,
-			     int num_fields2, 
+			     int num_fields2,
 			     const component *components2,
 			     field_function integrand,
 			     void *integrand_data_,
@@ -1386,12 +1526,13 @@ class fields {
   double max_abs(int c, const volume &where);
   double max_abs(component c, const volume &where);
   double max_abs(derived_component c, const volume &where);
-  
+
   // dft.cpp
   dft_chunk *add_dft(component c, const volume &where,
 		     double freq_min, double freq_max, int Nfreq,
 		     bool include_dV_and_interp_weights = true,
-		     std::complex<double> weight = 1.0, dft_chunk *chunk_next = 0,
+		     std::complex<double> stored_weight = 1.0,
+                     dft_chunk *chunk_next = 0,
 		     bool sqrt_dV_and_interp_weights = false,
 		     std::complex<double> extra_weight = 1.0,
 		     bool use_centered_grid = true, int vc = 0);
@@ -1410,6 +1551,57 @@ class fields {
   dft_flux add_dft_flux(const volume_list *where,
 			double freq_min, double freq_max, int Nfreq);
 
+  dft_fields add_dft_fields(component *components, int num_components,
+                            const volume where,
+                            double freq_min, double freq_max, int Nfreq);
+
+  /********************************************************/
+  /* process_dft_component is an intermediate-level       */
+  /* routine that serves as a common back end for several */
+  /* operations involving DFT fields (specifically,       */
+  /* writing DFT fields to HDF5 files, fetching arrays    */
+  /* of DFT fields, and  evaluating overlap integrals     */
+  /* flux and mode fields.)                               */
+  /********************************************************/
+  std::complex<double> process_dft_component(dft_chunk **chunklists,
+                                             int num_chunklists,
+                                             int num_freq, component c,
+                                             const char *HDF5FileName,
+                                             std::complex<double> **field_array=0,
+                                             int *rank=0, int *dims=0,
+                                             void *mode1_data=0,
+                                             void *mode2_data=0,
+                                             component c_conjugate=Ex,
+                                             bool *first_component=0);
+
+  // output DFT fields to HDF5 file
+  void output_dft_components(dft_chunk **chunklists, int num_chunklists,
+                             volume dft_volume, const char *HDF5FileName);
+
+  void output_dft(dft_flux flux, const char *HDF5FileName);
+  void output_dft(dft_force force, const char *HDF5FileName);
+  void output_dft(dft_near2far n2f, const char *HDF5FileName);
+  void output_dft(dft_fields fdft, const char *HDF5FileName);
+  void output_mode_fields(void *mode_data, dft_flux flux,
+                          const char *HDF5FileName);
+
+  // get array of DFT field values
+  std::complex<double> *get_dft_array(dft_flux flux, component c, int num_freq,
+                                      int *rank, int dims[3]);
+  std::complex<double> *get_dft_array(dft_fields fdft, component c, int num_freq,
+                                      int *rank, int dims[3]);
+  std::complex<double> *get_dft_array(dft_force force, component c, int num_freq,
+                                      int *rank, int dims[3]);
+  std::complex<double> *get_dft_array(dft_near2far n2f, component c, int num_freq,
+                                      int *rank, int dims[3]);
+
+  // overlap integrals between eigenmode fields and DFT flux fields
+  void get_overlap(void *mode1_data, void *mode2_data, dft_flux flux,
+                   int num_freq, std::complex<double>overlaps[2]);
+  void get_mode_flux_overlap(void *mode_data, dft_flux flux, int num_freq,
+                             std::complex<double>overlaps[2]);
+  void get_mode_mode_overlap(void *mode1_data, void *mode2_data, dft_flux flux, std::complex<double>overlaps[2]);
+
   // stress.cpp
   dft_force add_dft_force(const volume_list *where,
 			  double freq_min, double freq_max, int Nfreq);
@@ -1426,13 +1618,7 @@ class fields {
   double get_mu(const vec &loc) const;
   void get_point(monitor_point *p, const vec &) const;
   monitor_point *get_new_point(const vec &, monitor_point *p=NULL) const;
-  
-  void prepare_for_bands(const vec &, double end_time, double fmax=0,
-                         double qmin=1e300, double frac_pow_min=0.0);
-  void record_bands();
-  std::complex<double> get_band(int n, int maxbands=100);
-  void grace_bands(grace *, int maxbands=100);
-  void output_bands(FILE *, const char *, int maxbands=100);
+
   std::complex<double> get_field(int c, const vec &loc) const;
   std::complex<double> get_field(component c, const vec &loc) const;
   double get_field(derived_component c, const vec &loc) const;
@@ -1484,7 +1670,7 @@ class fields {
   void set_solve_cw_omega(std::complex<double> omega);
   void unset_solve_cw_omega();
 
- private: 
+ private:
   int verbosity; // Turn on verbosity for debugging purposes...
   int synchronized_magnetic_fields; // count number of nested synchs
   double last_wall_time;
@@ -1515,11 +1701,6 @@ class fields {
   void step_source(field_type ft, bool including_integrated = false);
   void update_pols(field_type ft);
   void calc_sources(double tim);
-  int cluster_some_bands_cleverly(double *tf, double *td, std::complex<double> *ta,
-                                  int num_freqs, int fields_considered, int maxbands,
-                                  std::complex<double> *fad, double *approx_power);
-  void out_bands(FILE *, const char *, int maxbands);
-  std::complex<double> *clever_cluster_bands(int maxbands, double *approx_power = NULL);
 public:
   // monitor.cpp
   std::complex<double> get_field(component c, const ivec &iloc) const;
@@ -1531,12 +1712,12 @@ public:
 class flux_vol {
  public:
   flux_vol(fields *f_, direction d_, const volume &where_) : where(where_) {
-    f = f_; d = d_; cur_flux = cur_flux_half = 0; 
+    f = f_; d = d_; cur_flux = cur_flux_half = 0;
     next = f->fluxes; f->fluxes = this;
   }
   ~flux_vol() { delete next; }
 
-  void update_half() { cur_flux_half = flux_wrongE(); 
+  void update_half() { cur_flux_half = flux_wrongE();
                        if (next) next->update_half(); }
   void update() { cur_flux = (flux_wrongE() + cur_flux_half) * 0.5;
                   if (next) next->update(); }
@@ -1550,30 +1731,6 @@ class flux_vol {
   direction d;
   volume where;
   double cur_flux, cur_flux_half;
-};
-
-class grace_point;
-enum grace_type { XY, ERROR_BARS };
-
-class grace {
- public:
-  grace(const char *fname, const char *dirname = ".");
-  ~grace();
-  
-  void new_set(grace_type t = XY);
-  void new_curve();
-  void set_legend(const char *);
-  void set_range(double xmin, double xmax, double ymin, double ymax);
-  void output_point(double x, double y,
-                    double dy = -1.0, double extra = -1.0);
-  void output_out_of_order(int n, double x, double y,
-                           double dy = -1.0, double extra= -1.0);
- private:
-  void flush_pts();
-  FILE *f;
-  char *fn, *dn;
-  grace_point *pts;
-  int set_num,sn;
 };
 
 // The following is a utility function to parse the executable name use it
@@ -1596,7 +1753,7 @@ int do_harminv(std::complex<double> *data, int n, double dt,
 	       std::complex<double> *amps, double *freq_re, double *freq_im,
 	       double *errors = NULL,
 	       double spectral_density = 1.1, double Q_thresh = 50,
-	       double rel_err_thresh = 1e20, double err_thresh = 0.01, 
+	       double rel_err_thresh = 1e20, double err_thresh = 0.01,
 	       double rel_amp_thresh = -1, double amp_thresh = -1);
 
 std::complex<double> *make_casimir_gfunc(double T, double dt, double sigma, field_type ft,
@@ -1628,6 +1785,15 @@ void green2d(std::complex<double> *EH, const vec &x,
 void green3d(std::complex<double> *EH, const vec &x,
              double freq, double eps, double mu,
              const vec &x0, component c0, std::complex<double> f0);
+
+// non-class methods for working with mpb eigenmode data
+//
+void destroy_eigenmode_data(void *vedata);
+std::complex<double> eigenmode_amplitude(void *vedata,
+                                         const vec &p,
+                                         component c);
+double get_group_velocity(void *vedata);
+vec get_k(void *vedata);
 
 } /* namespace meep */
 
