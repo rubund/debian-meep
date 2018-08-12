@@ -1,0 +1,49 @@
+Near-field to far-field transformations.
+
+Gyromagnetic materials (via general anisotropic conductivities).
+
+Finish implementation of active materials (multilevel atoms and
+saturable absorption/gain).
+
+Support 3d (r,phi,z) cell, where m is "Bloch wavenumber"
+      -- gives 6-fold (and n-fold) symmetry as side effect
+      -- allows computation of bended photonic-crystal waveguides
+
+Implement transparent boundary conditions to back PML layers, so that
+glancing-angle waves can be absorbed.
+
+Re-entrant functions: foo(vec&) arguments should be foo(vec&, void*)
+where the second argument can be used to pass state (instead of global
+vars).
+
+User proper PML for cylindrical coordinates, rather than quasi-PML.
+
+Use more-stable algorithm for dispersive media.
+
+Field dump/load (i.e. restarting)?
+
+Make sure epsilon and other material properties respect symmetry,
+periodic boundaries, etc.?
+
+Remove monitor point class (redundant with HDF5 output, DFT volumes?).
+
+Integrated support for calling MPB mode solver for current distributions.
+
+rename fields::initialize to fields::add_to_fields or something like that,
+and allow specifying a geometric_volume.
+
+Dump field Fourier transforms in a readable, documented format.
+
+Support Pade approximates (libpadespectrum) for Fourier and modal analysis.
+
+Check sensitivity to rounding error and if there is a better way to handle:
+      structure.cpp:555 (PML region boundaries)
+      vec.cpp:560 (interpolation weights)
+      anisotropic_averaging: 79 (magnitude of normal vector)
+
+-------------------
+LIBCTL FRONT-END:
+
+Need a way to reset epsilon when restarting, and also phasing support.
+
+Support arbitrary-shaped sources.
