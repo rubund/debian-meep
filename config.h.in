@@ -86,8 +86,8 @@
 /* Define to 1 if you have the `fftw3' library (-lfftw3). */
 #undef HAVE_LIBFFTW3
 
-/* Define to 1 if you have the `gen' library (-lgen). */
-#undef HAVE_LIBGEN
+/* Define to 1 if you have the `GDSII' library (-lGDSII). */
+#undef HAVE_LIBGDSII
 
 /* Define to 1 if you have the `gsl' library (-lgsl). */
 #undef HAVE_LIBGSL
@@ -164,8 +164,7 @@
 /* Define to catch and ignore SIGFPE signals */
 #undef IGNORE_SIGFPE
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define if mpi.h needs SEEK macros to be undefined */

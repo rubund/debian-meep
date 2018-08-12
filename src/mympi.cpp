@@ -82,7 +82,7 @@ initialize::initialize(int &argc, char** &argv) {
   MPI_Init(&argc, &argv);
   int major, minor;
   MPI_Get_version(&major, &minor);
-  if (!quiet) master_printf("Using MPI version %d.%d, %d processes\n", 
+  if (!quiet) master_printf("Using MPI version %d.%d, %d processes\n",
 			    major, minor, count_processors());
 #else
   UNUSED(argc);
@@ -203,6 +203,17 @@ void broadcast(int from, int *data, int size) {
 #endif
 }
 
+void broadcast(int from, size_t *data, int size) {
+#ifdef HAVE_MPI
+  if (size == 0) return;
+  MPI_Bcast(data, size, sizeof(size_t)==4?MPI_UNSIGNED:MPI_UNSIGNED_LONG_LONG, from, mycomm);
+#else
+  UNUSED(from);
+  UNUSED(data);
+  UNUSED(size);
+#endif
+}
+
 complex<double> broadcast(int from, complex<double> data) {
 #ifdef HAVE_MPI
   MPI_Bcast(&data, 2, MPI_DOUBLE, from, mycomm);
@@ -269,6 +280,14 @@ ivec max_to_all(const ivec &pt) {
   return ptout;
 }
 
+float sum_to_master(float in) {
+  float out = in;
+#ifdef HAVE_MPI
+  MPI_Reduce(&in,&out,1,MPI_FLOAT,MPI_SUM,0,mycomm);
+#endif
+  return out;
+}
+
 double sum_to_master(double in) {
   double out = in;
 #ifdef HAVE_MPI
@@ -293,6 +312,14 @@ void sum_to_all(const double *in, double *out, int size) {
 #endif
 }
 
+void sum_to_master(const float *in, float *out, int size) {
+#ifdef HAVE_MPI
+  MPI_Reduce((void*) in, out, size, MPI_FLOAT,MPI_SUM,0,mycomm);
+#else
+  memcpy(out, in, sizeof(float) * size);
+#endif
+}
+
 void sum_to_master(const double *in, double *out, int size) {
 #ifdef HAVE_MPI
   MPI_Reduce((void*) in, out, size, MPI_DOUBLE,MPI_SUM,0,mycomm);
@@ -300,6 +327,7 @@ void sum_to_master(const double *in, double *out, int size) {
   memcpy(out, in, sizeof(double) * size);
 #endif
 }
+
 
 void sum_to_all(const float *in, double *out, int size) {
   double *in2 = new double[size];
@@ -314,6 +342,10 @@ void sum_to_all(const complex<double> *in, complex<double> *out, int size) {
 
 void sum_to_all(const complex<float> *in, complex<double> *out, int size) {
   sum_to_all((const float*) in, (double*) out, 2*size);
+}
+
+void sum_to_master(const complex<float> *in, complex<float> *out, int size) {
+  sum_to_master((const float*) in, (float*) out, 2*size);
 }
 
 void sum_to_master(const complex<double> *in, complex<double> *out, int size) {
@@ -343,6 +375,38 @@ int partial_sum_to_all(int in) {
   int out = in;
 #ifdef HAVE_MPI
   MPI_Scan(&in,&out,1,MPI_INT,MPI_SUM,mycomm);
+#endif
+  return out;
+}
+
+size_t sum_to_all(size_t in) {
+  size_t out = in;
+#ifdef HAVE_MPI
+  MPI_Allreduce(&in,&out,1, sizeof(size_t)==4?MPI_UNSIGNED:MPI_UNSIGNED_LONG_LONG, MPI_SUM,mycomm);
+#endif
+  return out;
+}
+
+void sum_to_all(const size_t *in, size_t *out, int size) {
+#ifdef HAVE_MPI
+  MPI_Allreduce((void*) in, out, size, sizeof(size_t)==4?MPI_UNSIGNED:MPI_UNSIGNED_LONG_LONG, MPI_SUM,mycomm);
+#else
+  memcpy(out, in, sizeof(size_t) * size);
+#endif
+}
+
+void sum_to_master(const size_t *in, size_t *out, int size) {
+#ifdef HAVE_MPI
+  MPI_Reduce((void*) in, out, size, sizeof(size_t)==4?MPI_UNSIGNED:MPI_UNSIGNED_LONG_LONG, MPI_SUM,0,mycomm);
+#else
+  memcpy(out, in, sizeof(size_t) * size);
+#endif
+}
+
+size_t partial_sum_to_all(size_t in) {
+  size_t out = in;
+#ifdef HAVE_MPI
+  MPI_Scan(&in,&out,1, sizeof(size_t)==4?MPI_UNSIGNED:MPI_UNSIGNED_LONG_LONG, MPI_SUM,mycomm);
 #endif
   return out;
 }
@@ -431,6 +495,14 @@ int count_processors() {
 #endif
 }
 
+bool with_mpi() {
+#ifdef HAVE_MPI
+  return true;
+#else
+  return false;
+#endif
+}
+
 void fields::boundary_communications(field_type ft) {
   // Communicate the data around!
 #if 0 // This is the blocking version, which should always be safe!
@@ -455,18 +527,20 @@ void fields::boundary_communications(field_type ft) {
     for (int j=0;j<num_chunks;j++) {
       const int i = (noti+j)%num_chunks;
       const int pair = j+i*num_chunks;
-      const int comm_size = comm_size_tot(ft,pair);
+      const size_t comm_size = comm_size_tot(ft,pair);
       if (comm_size > 0) {
-	if (chunks[j]->is_mine() && !chunks[i]->is_mine())
-	  MPI_Isend(comm_blocks[ft][pair], comm_size,
-		    MPI_REALNUM, chunks[i]->n_proc(),
-		    tagto[chunks[i]->n_proc()]++,
-		    mycomm, &reqs[reqnum++]);
-	if (chunks[i]->is_mine() && !chunks[j]->is_mine())
-	  MPI_Irecv(comm_blocks[ft][pair], comm_size,
-		    MPI_REALNUM, chunks[j]->n_proc(),
-		    tagto[chunks[j]->n_proc()]++,
-		    mycomm, &reqs[reqnum++]);
+        if (comm_size > 2147483647) // MPI uses int for size to send/recv
+          abort("communications size too big for MPI");
+      	if (chunks[j]->is_mine() && !chunks[i]->is_mine())
+      	  MPI_Isend(comm_blocks[ft][pair], (int) comm_size,
+      		    MPI_REALNUM, chunks[i]->n_proc(),
+      		    tagto[chunks[i]->n_proc()]++,
+      		    mycomm, &reqs[reqnum++]);
+      	if (chunks[i]->is_mine() && !chunks[j]->is_mine())
+      	  MPI_Irecv(comm_blocks[ft][pair], (int) comm_size,
+      		    MPI_REALNUM, chunks[j]->n_proc(),
+      		    tagto[chunks[j]->n_proc()]++,
+      		    mycomm, &reqs[reqnum++]);
       }
     }
   delete[] tagto;
@@ -533,7 +607,7 @@ void master_fclose(FILE *f) {
    of code that should be executed by only one process at a time.
 
    They work by having each process wait for a message from the
-   previous process before starting. 
+   previous process before starting.
 
    Each critical section is passed an integer "tag"...ideally, this
    should be a unique identifier for each critical section so that
@@ -548,7 +622,7 @@ void begin_critical_section(int tag)
      if (process_rank > 0) { /* wait for a message before continuing */
 	  MPI_Status status;
 	  int recv_tag = tag - 1; /* initialize to wrong value */
-	  MPI_Recv(&recv_tag, 1, MPI_INT, process_rank - 1, tag, 
+	  MPI_Recv(&recv_tag, 1, MPI_INT, process_rank - 1, tag,
 		   mycomm, &status);
 	  if (recv_tag != tag) abort("invalid tag received in begin_critical_section");
      }
@@ -564,7 +638,7 @@ void end_critical_section(int tag)
      MPI_Comm_rank(mycomm, &process_rank);
      MPI_Comm_size(mycomm, &num_procs);
      if (process_rank != num_procs - 1) { /* send a message to next process */
-	  MPI_Send(&tag, 1, MPI_INT, process_rank + 1, tag, 
+	  MPI_Send(&tag, 1, MPI_INT, process_rank + 1, tag,
 		   mycomm);
      }
 #else
