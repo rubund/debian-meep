@@ -15,7 +15,8 @@ Build-Depends: gfortran,
   liblapack-dev, 
   chrpath, 
   libatlas-base-dev,  
-  libhdf5-dev
+  libhdf5-dev,
+  mpb-dev
 Standards-Version: 3.9.6
 Homepage: http://ab-initio.mit.edu/wiki/index.php/Meep
 
