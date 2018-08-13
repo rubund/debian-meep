@@ -106,3 +106,12 @@ Description: development library for using meep
      (via libctl). 
  .
  This package contains some files for developing software.
+
+Package: python-meep
+Architecture: any
+Depends: libmeep8 (= ${binary:Version}), ${misc:Depends}
+Description: software package for FDTD simulation (Python)
+ Meep (or MEEP) is a free finite-difference time-domain (FDTD) simulation
+ software package developed at MIT to model electromagnetic systems.
+ .
+ This package contains the python binding
