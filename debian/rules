@@ -32,6 +32,17 @@ override_dh_clean:
 	rm -f tests/latest_output
 	dh_clean
 
+override_dh_auto_install:
+	dh_auto_install
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/*.pyc
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/*.pyo
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/*.a
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/*.la
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/mpb/*.pyc
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/mpb/*.pyo
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/mpb/*.a
+	$(RM) debian/tmp/usr/lib/python2.7/dist-packages/meep/mpb/*.la
+
 override_dh_auto_test:
 	echo ${arch}
 	# FIXME: Temporarily disabled
