@@ -2,19 +2,19 @@ Source: meep
 Section: science
 Priority: optional
 Maintainer: Thorsten Alteholz <debian@alteholz.de>
-Build-Depends: gfortran, 
-  debhelper (>= 9), 
-  autotools-dev, 
+Build-Depends: gfortran,
+  debhelper (>= 9),
+  autotools-dev,
   dh-autoreconf,
   libctl-dev (>= 4.1.0),
-  pkg-config, 
-  libharminv-dev (>= 1.1), 
-  zlib1g-dev, 
-  libfftw3-dev, 
-  libgsl-dev, 
-  liblapack-dev, 
-  chrpath, 
-  libatlas-base-dev,  
+  pkg-config,
+  libharminv-dev (>= 1.1),
+  zlib1g-dev,
+  libfftw3-dev,
+  libgsl-dev,
+  liblapack-dev,
+  chrpath,
+  libatlas-base-dev,
   libhdf5-dev,
   mpb-dev,
   python-dev,
@@ -35,19 +35,19 @@ Description: software package for FDTD simulation
    * Simulation in 1d, 2d, 3d, and cylindrical coordinates.
    * Dispersive (including loss/gain) and nonlinear (Kerr & Pockels) materials.
      Magnetic permeability and electric/magnetic conductivities.
-   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic 
+   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic
      boundary conditions.
-   * Exploitation of symmetries to reduce the computation size . 
+   * Exploitation of symmetries to reduce the computation size .
      even/odd mirror symmetries and 90/180 degree rotations.
-   * Complete scriptability - either via a Scheme scripting front-end 
+   * Complete scriptability - either via a Scheme scripting front-end
      (as in libctl and MPB), or callable as a C++ library.
-   * Field output in the HDF5 standard scientific data format, supported by 
+   * Field output in the HDF5 standard scientific data format, supported by
      many visualization tools.
    * Arbitrary material and source distributions.
-   * Field analyses including flux spectra, frequency extraction, and energy 
+   * Field analyses including flux spectra, frequency extraction, and energy
      integrals; completely programmable.
-   * Multi-parameter optimization, root-finding, integration, etcetera 
-     (via libctl). 
+   * Multi-parameter optimization, root-finding, integration, etcetera
+     (via libctl).
  .
  This package contains the software.
 
@@ -64,19 +64,19 @@ Description: library for using meep
    * Simulation in 1d, 2d, 3d, and cylindrical coordinates.
    * Dispersive (including loss/gain) and nonlinear (Kerr & Pockels) materials.
      Magnetic permeability and electric/magnetic conductivities.
-   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic 
+   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic
      boundary conditions.
-   * Exploitation of symmetries to reduce the computation size . 
+   * Exploitation of symmetries to reduce the computation size .
      even/odd mirror symmetries and 90/180 degree rotations.
-   * Complete scriptability - either via a Scheme scripting front-end 
+   * Complete scriptability - either via a Scheme scripting front-end
      (as in libctl and MPB), or callable as a C++ library.
-   * Field output in the HDF5 standard scientific data format, supported by 
+   * Field output in the HDF5 standard scientific data format, supported by
      many visualization tools.
    * Arbitrary material and source distributions.
-   * Field analyses including flux spectra, frequency extraction, and energy 
+   * Field analyses including flux spectra, frequency extraction, and energy
      integrals; completely programmable.
-   * Multi-parameter optimization, root-finding, integration, etcetera 
-     (via libctl). 
+   * Multi-parameter optimization, root-finding, integration, etcetera
+     (via libctl).
  .
  This package contains the library.
 
@@ -93,19 +93,19 @@ Description: development library for using meep
    * Simulation in 1d, 2d, 3d, and cylindrical coordinates.
    * Dispersive (including loss/gain) and nonlinear (Kerr & Pockels) materials.
      Magnetic permeability and electric/magnetic conductivities.
-   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic 
+   * PML absorbing boundaries and/or perfect conductor and/or Bloch-periodic
      boundary conditions.
-   * Exploitation of symmetries to reduce the computation size . 
+   * Exploitation of symmetries to reduce the computation size .
      even/odd mirror symmetries and 90/180 degree rotations.
-   * Complete scriptability - either via a Scheme scripting front-end 
+   * Complete scriptability - either via a Scheme scripting front-end
      (as in libctl and MPB), or callable as a C++ library.
-   * Field output in the HDF5 standard scientific data format, supported by 
+   * Field output in the HDF5 standard scientific data format, supported by
      many visualization tools.
    * Arbitrary material and source distributions.
-   * Field analyses including flux spectra, frequency extraction, and energy 
+   * Field analyses including flux spectra, frequency extraction, and energy
      integrals; completely programmable.
-   * Multi-parameter optimization, root-finding, integration, etcetera 
-     (via libctl). 
+   * Multi-parameter optimization, root-finding, integration, etcetera
+     (via libctl).
  .
  This package contains some files for developing software.
 
