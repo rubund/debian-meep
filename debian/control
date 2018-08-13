@@ -110,6 +110,7 @@ Description: development library for using meep
  This package contains some files for developing software.
 
 Package: python-meep
+Section: python
 Architecture: any
 Depends: libmeep10 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends},
          python-numpy, python2
