@@ -113,7 +113,7 @@ Package: python-meep
 Section: python
 Architecture: any
 Depends: libmeep10 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends},
-         python-numpy, python2
+         python-numpy, python
 Description: software package for FDTD simulation (Python)
  Meep (or MEEP) is a free finite-difference time-domain (FDTD) simulation
  software package developed at MIT to model electromagnetic systems.
