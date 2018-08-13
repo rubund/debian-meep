@@ -6,7 +6,7 @@ Build-Depends: gfortran,
   debhelper (>= 9), 
   autotools-dev, 
   dh-autoreconf,
-  libctl-dev (>= 4.1.0-1),
+  libctl-dev (>= 4.1.0),
   pkg-config, 
   libharminv-dev (>= 1.1), 
   zlib1g-dev, 
@@ -111,9 +111,10 @@ Description: development library for using meep
 
 Package: python-meep
 Architecture: any
-Depends: libmeep8 (= ${binary:Version}), ${misc:Depends}, python-numpy
+Depends: libmeep8 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends},
+         python-numpy, python2
 Description: software package for FDTD simulation (Python)
  Meep (or MEEP) is a free finite-difference time-domain (FDTD) simulation
  software package developed at MIT to model electromagnetic systems.
  .
- This package contains the python binding
+ This package contains the Python binding
