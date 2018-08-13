@@ -18,6 +18,7 @@ Build-Depends: gfortran,
   libhdf5-dev,
   mpb-dev,
   python-dev,
+  python-numpy,
   libgdsii-dev
 Standards-Version: 3.9.6
 Homepage: http://ab-initio.mit.edu/wiki/index.php/Meep
