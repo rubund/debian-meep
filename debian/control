@@ -51,7 +51,7 @@ Description: software package for FDTD simulation
  .
  This package contains the software.
 
-Package: libmeep8
+Package: libmeep10
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${misc:Pre-Depends}
@@ -83,7 +83,7 @@ Description: library for using meep
 Package: libmeep-dev
 Section: libdevel
 Architecture: any
-Depends: libmeep8 (= ${binary:Version}), ${misc:Depends}
+Depends: libmeep10 (= ${binary:Version}), ${misc:Depends}
 Conflicts: libmeep-mpi-dev
 Description: development library for using meep
  Meep (or MEEP) is a free finite-difference time-domain (FDTD) simulation
@@ -111,7 +111,7 @@ Description: development library for using meep
 
 Package: python-meep
 Architecture: any
-Depends: libmeep8 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends},
+Depends: libmeep10 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends},
          python-numpy, python2
 Description: software package for FDTD simulation (Python)
  Meep (or MEEP) is a free finite-difference time-domain (FDTD) simulation
