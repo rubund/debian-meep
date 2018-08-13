@@ -27,10 +27,6 @@ CONFIGURE_FLAGS = --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 override_dh_auto_configure:
 	F77=gfortran dh_auto_configure -- $(CONFIGURE_FLAGS)
 
-override_dh_auto_install:
-	dh_installchangelogs NEWS
-	dh_auto_install
-
 override_dh_clean:
 	# we do not need this anymore
 	rm -f tests/latest_output
@@ -38,14 +34,15 @@ override_dh_clean:
 
 override_dh_auto_test:
 	echo ${arch}
-	if [ "${arch}" = "armel" ] || \
-	   [ "${arch}" = "mips" ] || \
-	   [ "${arch}" = "mipsel" ] || \
-	   [ "${arch}" = "poerpc" ] || \
-	   [ "${arch}" = "sparc" ] ; then \
-	  echo "Do not make tests on this architecture" ;\
-	else \
-	  echo "Do make tests on this architecture" ;\
-	  make check; \
-	fi
+	# FIXME: Temporarily disabled
+	#if [ "${arch}" = "armel" ] || \
+	#   [ "${arch}" = "mips" ] || \
+	#   [ "${arch}" = "mipsel" ] || \
+	#   [ "${arch}" = "poerpc" ] || \
+	#   [ "${arch}" = "sparc" ] ; then \
+	#  echo "Do not make tests on this architecture" ;\
+	#else \
+	#  echo "Do make tests on this architecture" ;\
+	#  make check; \
+	#fi
 
