@@ -19,7 +19,8 @@ CONFIGURE_FLAGS = --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	--infodir=\$${prefix}/share/info \
 	--with-libctl=/usr/share/libctl \
 	--with-gcc-arch=no \
-	--enable-shared --with-pic --enable-cxx
+	--enable-shared --with-pic --enable-cxx \
+	--enable-maintainer-mode
 
 %:
 	dh $@ --with autoreconf --parallel
