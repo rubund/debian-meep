@@ -1,2 +1,2 @@
 version=3
-http://ab-initio.mit.edu/wiki/index.php/Meep_download http://ab-initio.mit.edu/meep/meep-(.*)\.tar\.gz
+https://github.com/stevengj/meep/releases /stevengj/meep/archive/v?(\d\S+)\.tar\.(?:bz2|gz|xz)
